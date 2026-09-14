@@ -1,8 +1,11 @@
 # my-pi
 
-给 [Pi coding agent](https://pi.dev) 用的一套配置：开箱可用的核心设置、权限模型、主题、绘图技能，以及一键安装脚本。
+给 [Pi coding agent](https://pi.dev) 用的一套配置：核心设置、权限模型、主题、期刊级绘图技能，加上一个一键安装脚本。
 
-不含任何个人域名、内网地址与密钥 —— 所有敏感值都以模板形式提供，由你在本机填写。
+**装一次就归你。** 这是安装器而不是配置仓库 —— 它把模板文件复制进 `~/.pi/agent`，
+之后你随便改。你个人的 `models.json`、`mcp.json`、记忆与会话数据从不在模板里，永远不会被覆盖。
+
+不含任何个人域名、内网地址与密钥；所有敏感值都以模板形式提供，由你在本机填写。
 
 ## 一键安装
 
@@ -10,23 +13,24 @@
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/DieRingedesSaturn/my-pi/master/install.sh)"
 ```
 
-重复执行同一条命令即为**更新**。本机未提交的改动会先备份到 `~/my-pi-backup-<时间戳>/` 再覆盖。
+重复执行同一条命令即为**更新**：会用最新模板覆盖对应文件，覆盖前自动备份到
+`~/my-pi-backup-<时间戳>/`。
 
-> 也支持 `curl -fsSL <url> | sh`，但那会让 stdin 被脚本本身占用，脚本无法再向你提问。
+> 也支持 `curl -fsSL <url> | sh`，但那样 stdin 会被脚本占用，脚本无法再向你提问。
 > 需要交互时用上面的 `sh -c "$(...)"` 形式。
 
 安装脚本做的事：
 
 1. 检查 `pi` 与 `git`
-2. 克隆（或更新）本仓库到 `~/.my-pi-config`（bare）
-3. 展开到 `~/.pi/agent`
-4. 若 `models.json` / `mcp.json` 不存在，从 `.example` 模板生成
+2. 把模板取到缓存目录 `~/.cache/my-pi`（**不** clone 进 `~/.pi/agent`，不建立 git 跟踪关系）
+3. 按显式清单复制模板文件到 `~/.pi/agent`，覆盖前先备份并逐个报告
+4. 若 `models.json` / `mcp.json` 不存在，从 `.example` 生成（已存在则绝不改动）
 5. 若存在 `~/.pi/pi-local.json`，把其中的个人配置并进去
-6. 安装密钥扫描 pre-commit 钩子
-7. 准备好 `~/.pi-secrets/mcp.token`（600 权限）
-8. `npm install` 安装插件
-9. 应用终端背景色探测补丁
-10. 给 `~/.zshrc` / `~/.bashrc` 加 `pi-cfg` 别名
+6. 准备好 `~/.pi-secrets/mcp.token`（600 权限）
+7. `npm install` 安装插件
+8. 应用终端背景色探测补丁
+
+**不安装** `README.md`、`install.sh`、`.gitignore`、`.githooks/` —— 那些是本仓库自身的文件。
 
 ## 装了什么
 
@@ -38,9 +42,9 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/DieRingedesSaturn/my-pi/ma
 | `patches/prefer-terminal-background-theme.mjs` | 修 Ghostty 等终端的明暗误判 |
 | `skills/astronomy-plotting/` | 期刊级天文绘图技能（AAS/IOP 规范 + 合规审计脚本） |
 | `npm/package.json` | 插件依赖清单 |
-| `.githooks/pre-commit` | 提交前扫描明文密钥 |
 | `pi-speeed.json` | tok/s 显示插件配置 |
-| `install.sh` | 本安装脚本 |
+| `models.json.example` | 模型提供商模板 |
+| `mcp.json.example` | MCP server 模板 |
 
 ### 插件
 
@@ -48,7 +52,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/DieRingedesSaturn/my-pi/ma
 pi-mcp-adapter                        MCP 支持（省 token 的懒加载）
 @gotgenes/pi-permission-system        权限审批
 pi-subagents                          子代理编排
-@juicesharp/rpiv-todo                任务清单
+@juicesharp/rpiv-todo                 任务清单
 @juicesharp/rpiv-ask-user-question    结构化提问
 @ayulab/pi-rewind                     会话回退
 pi-speeed                             生成速度显示
@@ -56,34 +60,19 @@ pi-markdown-preview                   Markdown 预览
 better-custom                         自定义工具
 ```
 
-## 文件约定
-
-**只有 `.example` 模板入库。** 真实的 `models.json` / `mcp.json` 永远不被跟踪 ——
-它们必然含个人域名、内网地址或凭据引用，是配置仓库最容易泄露的地方。
-
-| 入库 | 不入库（`.gitignore`） |
-|------|----------------------|
-| `models.json.example` | `models.json` |
-| `mcp.json.example` | `mcp.json` |
-| | `mcp-onboarding.json`（运行时状态） |
-| | `auth.json`、`~/.pi-secrets/` |
-| | `sessions/`、记忆文件、`npm/node_modules/` |
-
-首次安装后按需修改生成出来的 `models.json` / `mcp.json`。
-
 ## 密钥怎么放
 
 **永远不要把密钥写进配置文件。** 三条路径：
 
 | 类型 | 位置 | 说明 |
 |------|------|------|
-| 模型提供商密钥 | `~/.pi/agent/auth.json` | 用 Pi 里的 `/login` 写入，权限 600，不入库 |
+| 模型提供商密钥 | `~/.pi/agent/auth.json` | 用 Pi 里的 `/login` 写入，权限 600 |
 | MCP token | `~/.pi-secrets/mcp.token` | 600 权限，配置里用 `"bearerToken": "!cat ~/.pi-secrets/mcp.token"` 引用 |
-| 环境变量类 | shell 环境 | 配置里写 `${VAR}`，值放不进版本库的地方 |
+| 环境变量类 | shell 环境 | 配置里写 `${VAR}`，值放不进版本库 |
 
 ### 为什么 MCP token 用文件而不是系统钥匙串
 
-Pi 的 MCP 适配器支持 `bearerTokenStore: true` 从 OS 钥匙串读 token，这在桌面上没问题，
+Pi 的 MCP 适配器支持 `bearerTokenStore: true` 从 OS 钥匙串读 token，桌面上没问题，
 但**无头服务器上没有 Secret Service**（gnome-keyring / KWallet），适配器在那种环境下是
 **fail-closed 的，不会退回明文**，直接报：
 
@@ -113,11 +102,14 @@ Configure or unlock the OS credential store and retry.
 
 ## 个人配置的多设备复用（可选）
 
-把个人值集中在 `~/.pi/pi-local.json`（不跟踪），安装脚本会自动并入
-`models.json` 与 `mcp.json`：
+把个人值集中在 `~/.pi/pi-local.json`，安装脚本每次都会并入。支持三段：
 
 ```json
 {
+  "settings": {
+    "defaultProvider": "my-gateway",
+    "defaultModel": "your-model-id"
+  },
   "providers": {
     "my-gateway": {
       "baseUrl": "https://api.example.com/v1",
@@ -136,22 +128,35 @@ Configure or unlock the OS credential store and retry.
 }
 ```
 
-这样你可以在多台设备间复用自己的配置，而仓库本身保持通用。
+- `providers` → 并入 `models.json`
+- `mcpServers` → 并入 `mcp.json`
+- `settings` → 浅覆盖 `settings.json` 的同名键（比如把默认模型设成你自建网关上的模型）
+
+这样你可以在多台设备间复用自己的配置，而本仓库保持通用。
+
+## 自己版本化配置（可选）
+
+安装器不建立任何 git 跟踪关系。如果你想给自己的配置做版本控制：
+
+```sh
+cd ~/.pi/agent
+git init
+cp ~/.cache/my-pi/.gitignore .        # 模板自带的忽略规则，避免提交进个人配置
+cp -r ~/.cache/my-pi/.githooks .      # 可选的提交前密钥扫描钩子
+git config core.hooksPath .githooks
+```
+
+`.gitignore` 已排除 `models.json`、`mcp.json`、`auth.json`、`.pi-secrets/`、
+记忆与会话目录等 —— 这些是泄露风险最高的东西。
 
 ## 更新与维护
 
 ```sh
-# 拉取最新配置并应用（等同于重跑安装）
-sh install.sh
-
-# 管理本机改动（别名由安装脚本写入 shell rc）
-pi-cfg status
-pi-cfg add <文件>
-pi-cfg commit -m "..."
-pi-cfg push
+# 拉取最新模板并应用（覆盖前自动备份）
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/DieRingedesSaturn/my-pi/master/install.sh)"
 ```
 
-Pi 升级后建议重跑一次 `install.sh`：主题探测补丁会被 Pi 的升级覆盖，脚本会重新打上。
+Pi 升级后建议重跑一次：主题探测补丁会被 Pi 的升级覆盖，脚本会重新打上。
 
 ## 已知问题
 
