@@ -153,6 +153,28 @@ pi-cfg push
 
 Pi 升级后建议重跑一次 `install.sh`：主题探测补丁会被 Pi 的升级覆盖，脚本会重新打上。
 
+## 已知问题
+
+### 插件安装需要 `--allow-remote=all`
+
+`pi-mcp-adapter` 依赖一个挂在 `pkg.pr.new` 上的预发布包（`@modelcontextprotocol/client`，
+指向某个具体 commit 的 build）。npm 12 起默认 `allow-remote=none`，禁止
+“把依赖直接写成一个 URL” 的包，不加 flag 会直接失败：
+
+```
+npm error Fetching packages of type "remote" have been disabled
+npm error Refusing to fetch "@modelcontextprotocol/client@https://pkg.pr.new/..."
+```
+
+安装脚本已代为加上 `--allow-remote=all`。手动重跑时记得带上：
+
+```sh
+cd ~/.pi/agent/npm && npm install --allow-remote=all
+```
+
+如果你不接受从该 URL 拉包，把 `pi-mcp-adapter` 从 `settings.json` 的 `packages` 和
+`npm/package.json` 的依赖里一并去掉即可 —— 它是 MCP 支持，不影响 Pi 本体。
+
 ## 环境要求
 
 - Pi coding agent：https://pi.dev

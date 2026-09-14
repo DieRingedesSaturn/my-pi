@@ -173,10 +173,23 @@ else
 fi
 
 # ── 8. 安装插件 ──────────────────────────────────────────────
+# pi-mcp-adapter 依赖一个挂在 pkg.pr.new 上的预发布包
+# （@modelcontextprotocol/client，指向某个具体 commit 的 build）。
+# npm 12 起默认 allow-remote=none，禁止这类"依赖直接写成 URL"的包，不加 flag 会直接失败。
+# 代价是 npm 会从那个 URL 拉包；若不信任该来源，去掉 flag 并从 settings.json 与
+# npm/package.json 中一并移除 pi-mcp-adapter。
 echo "📦 安装插件（npm）..."
 if [ -f "$PI_DIR/npm/package.json" ]; then
-    ( cd "$PI_DIR/npm" && npm install --omit=dev 2>&1 | tail -3 ) || \
-        echo "   ⚠️  npm install 出错，可稍后手动重跑：cd $PI_DIR/npm && npm install"
+    NPM_LOG=$(mktemp "${TMPDIR:-/tmp}/my-pi-npm.XXXXXX")
+    if ( cd "$PI_DIR/npm" && npm install --omit=dev --allow-remote=all ) >"$NPM_LOG" 2>&1; then
+        tail -3 "$NPM_LOG" | sed 's/^/   /'
+        echo "   ✅ 插件已安装"
+    else
+        echo "   ⚠️  npm install 失败："
+        tail -12 "$NPM_LOG" | sed 's/^/      /'
+        echo "      可稍后手动重跑：cd $PI_DIR/npm && npm install --allow-remote=all"
+    fi
+    rm -f "$NPM_LOG"
 else
     echo "   ⚠️  未找到 npm/package.json，跳过"
 fi
