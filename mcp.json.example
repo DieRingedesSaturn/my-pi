@@ -1,0 +1,17 @@
+{
+  "imports": [
+    "claude-code"
+  ],
+  "mcpServers": {
+    "example": {
+      "type": "sse",
+      "url": "https://mcp.example.com/your-server",
+      "auth": "bearer",
+      "bearerToken": "!cat ~/.pi-secrets/mcp.token",
+      "directTools": [
+        "search",
+        "fetch_content"
+      ]
+    }
+  }
+}

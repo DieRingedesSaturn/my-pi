@@ -1,0 +1,33 @@
+{
+  "providers": {
+    "custom-example": {
+      "baseUrl": "https://api.example.com/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "your-model-id",
+          "input": [
+            "text",
+            "image"
+          ],
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "xhigh": "xhigh"
+          }
+        }
+      ]
+    },
+    "local-ollama": {
+      "baseUrl": "http://localhost:11434/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "qwen3:8b",
+          "input": [
+            "text"
+          ]
+        }
+      ]
+    }
+  }
+}

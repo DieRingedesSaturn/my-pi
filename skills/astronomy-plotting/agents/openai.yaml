@@ -1,0 +1,4 @@
+interface:
+  display_name: "Astronomy Plotting"
+  short_description: "Create journal-ready astronomy figures"
+  default_prompt: "Use $astronomy-plotting to create or edit a publication-quality astronomy figure with the standard inward-tick axis style, verified fonts, and editable vector output."

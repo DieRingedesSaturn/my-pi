@@ -1,0 +1,39 @@
+# my-pi 的 .gitignore
+#
+# 原则：只有 .example 模板入库；真实的 models.json / mcp.json 永远不跟踪，
+# 因为它们必然含个人域名、内网地址或密钥引用。
+
+# ── 真实配置（只跟踪同名 .example）──
+models.json
+mcp.json
+mcp-onboarding.json
+pi-local.json
+
+# ── 凭据 ──
+auth.json
+.env
+.pi-secrets/
+
+# ── 记忆与本地状态 ──
+pi-hermes-memory/
+projects-memory/
+sessions/
+models-store.json
+mcp-cache.json
+pi-speeed-stats.json
+
+# ── 依赖与构建产物 ──
+npm/node_modules/
+npm/package-lock.json
+__pycache__/
+*.pyc
+*.pyo
+
+# ── 日志与临时文件 ──
+*.log
+*.tmp
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+extensions/*/logs/
+bin/

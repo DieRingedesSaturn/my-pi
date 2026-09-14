@@ -1,0 +1,20 @@
+{
+  "name": "pi-extensions",
+  "private": true,
+  "dependencies": {
+    "@ayulab/pi-rewind": "^0.4.6",
+    "@gotgenes/pi-permission-system": "^32.0.2",
+    "@juicesharp/rpiv-ask-user-question": "^2.10.1",
+    "@juicesharp/rpiv-todo": "^2.10.1",
+    "better-custom": "^0.4.2",
+    "pi-markdown-preview": "^0.16.0",
+    "pi-mcp-adapter": "^2.33.0",
+    "pi-speeed": "^0.4.0",
+    "pi-subagents": "^0.67.0"
+  },
+  "allowScripts": {
+    "tree-sitter-bash@0.25.1": true,
+    "pi-speeed@0.4.0": true,
+    "better-sqlite3@13.0.3": true
+  }
+}

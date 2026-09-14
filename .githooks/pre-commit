@@ -1,0 +1,41 @@
+#!/bin/sh
+# pre-commit — 阻止明文密钥进入 Pi 配置仓库
+#
+# 为什么需要：2026-09-10 发现 models.json / mcp.json 曾把真实密钥明文提交并推送。
+# 本钩子扫描暂存区内容，命中常见密钥模式即拒绝提交。
+#
+# 安装（pi-setup.sh 会自动执行）：
+#   git --git-dir=$HOME/.pi-agent-config config core.hooksPath $HOME/.pi/agent/.githooks
+#
+# 目录名故意用 .githooks 而非 hooks/：Pi 启动时会检查 ~/.pi/agent/hooks 是否存在，
+# 存在即告警「Hooks have been renamed to extensions」（旧版把扩展叫 hooks），
+# 即使里面装的是 git 钩子也会误报。
+#
+# 误报时可用 git commit --no-verify 跳过，但请先确认不是真密钥。
+
+PATTERNS='sk-[A-Za-z0-9_-]{20,}|Bearer[[:space:]]+[A-Za-z0-9._-]{20,}|"apiKey"[[:space:]]*:[[:space:]]*"[A-Za-z0-9_-]{16,}"|"Authorization"[[:space:]]*:[[:space:]]*"[A-Za-z0-9._-]{16,}"|"token"[[:space:]]*:[[:space:]]*"[A-Za-z0-9._-]{16,}"|gh[porsu]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{12,}|AIza[0-9A-Za-z_-]{35}|-----BEGIN[A-Z ]*PRIVATE KEY-----'
+
+hits=""
+for f in $(git diff --cached --name-only --diff-filter=ACM); do
+    m=$(git show ":$f" 2>/dev/null | grep -InE "$PATTERNS" || true)
+    if [ -n "$m" ]; then
+        hits="$hits
+  $f:
+$(echo "$m" | sed 's/^/      /')"
+    fi
+done
+
+if [ -n "$hits" ]; then
+    echo "" >&2
+    echo "❌ 检测到疑似明文密钥，已阻止提交：$hits" >&2
+    echo "" >&2
+    echo "   密钥应存放的位置：" >&2
+    echo "     provider 密钥 → ~/.pi/agent/auth.json（用 /login 写入，已被 .gitignore 忽略）" >&2
+    echo "     MCP token     → 系统钥匙串（pi-mcp-adapter token set <server>）" >&2
+    echo "   参考文档：~/Downloads/Pi/docs/pi-config-secret-leak.md" >&2
+    echo "" >&2
+    echo "   确认是误报时可跳过：git commit --no-verify" >&2
+    exit 1
+fi
+
+exit 0
